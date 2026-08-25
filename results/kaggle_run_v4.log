@@ -1,0 +1,278 @@
+=== container diagnostics ===
+torch: 2.10.0+cu128 | torch.version.cuda: 12.8 | cuda available: True
+CUDA_VISIBLE_DEVICES: None
+nvidia-smi rc: 0 | Tesla T4, 15360 MiB
+Tesla T4, 15360 MiB
+torch 2.10.0+cu128 | visible GPUs: 2 -> ['Tesla T4', 'Tesla T4'] [(7, 5), (7, 5)]
+wrote 3 study scripts: ['01_nccl_bench.py', '02_ddp_sweep.py', '03_report.py']
+
+$ [2 ranks] 01_nccl_bench.py --dtype fp16 --out results/nccl_fp16.json
+[W825 01:41:13.092768993 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:41:13.117363484 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+world=2 dtype=fp16 device=Tesla T4 cap=(7, 5)
+
+       bytes      MiB  allreduce ms  algbw GB/s  busbw GB/s  allgather ms  ag busbw
+        4096     0.00         0.046        0.09        0.09         0.037      0.06
+        8192     0.01         0.040        0.21        0.21         0.040      0.10
+       16384     0.02         0.046        0.36        0.36         0.042      0.20
+       32768     0.03         0.045        0.72        0.72         0.040      0.41
+       65536     0.06         0.055        1.18        1.18         0.066      0.50
+      131072     0.12         0.092        1.43        1.43         0.087      0.75
+      262144     0.25         0.127        2.06        2.06         0.124      1.05
+      524288     0.50         0.188        2.78        2.78         0.206      1.27
+     1048576     1.00         0.311        3.37        3.37         0.364      1.44
+     2097152     2.00         0.568        3.69        3.69         0.692      1.51
+     4194304     4.00         1.080        3.88        3.88         1.331      1.58
+     8388608     8.00         2.073        4.05        4.05         2.316      1.81
+    16777216    16.00         4.153        4.04        4.04         5.254      1.60
+    33554432    32.00         8.328        4.03        4.03        10.466      1.60
+    67108864    64.00        16.598        4.04        4.04        20.870      1.61
+   134217728   128.00        33.155        4.05        4.05        40.829      1.64
+   268435456   256.00        66.226        4.05        4.05        77.443      1.73
+
+peak all-reduce bus bandwidth: 4.05 GB/s
+small-message latency floor (4096 B): 46.1 us
+reaches half of peak at 262144 bytes (0.25 MiB)
+wrote results/nccl_fp16.json
+
+$ [2 ranks] 01_nccl_bench.py --dtype fp32 --out results/nccl_fp32.json
+[W825 01:41:29.393564827 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:41:29.403287288 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+world=2 dtype=fp32 device=Tesla T4 cap=(7, 5)
+
+       bytes      MiB  allreduce ms  algbw GB/s  busbw GB/s  allgather ms  ag busbw
+        4096     0.00         0.094        0.04        0.04         0.071      0.03
+        8192     0.01         0.081        0.10        0.10         0.075      0.05
+       16384     0.02         0.083        0.20        0.20         0.043      0.19
+       32768     0.03         0.045        0.73        0.73         0.041      0.40
+       65536     0.06         0.055        1.18        1.18         0.066      0.50
+      131072     0.12         0.091        1.44        1.44         0.084      0.78
+      262144     0.25         0.125        2.09        2.09         0.124      1.06
+      524288     0.50         0.301        1.74        1.74         0.206      1.27
+     1048576     1.00         0.315        3.33        3.33         0.364      1.44
+     2097152     2.00         0.565        3.71        3.71         0.701      1.50
+     4194304     4.00         1.085        3.87        3.87         1.354      1.55
+     8388608     8.00         2.076        4.04        4.04         2.330      1.80
+    16777216    16.00         4.175        4.02        4.02         5.251      1.60
+    33554432    32.00         8.340        4.02        4.02        10.451      1.61
+    67108864    64.00        16.619        4.04        4.04        19.484      1.72
+   134217728   128.00        33.211        4.04        4.04        39.250      1.71
+   268435456   256.00        66.421        4.04        4.04        76.512      1.75
+
+peak all-reduce bus bandwidth: 4.04 GB/s
+small-message latency floor (4096 B): 94.2 us
+reaches half of peak at 262144 bytes (0.25 MiB)
+wrote results/nccl_fp32.json
+
+$ [1 rank] 02_ddp_sweep.py --tag 1gpu
+1gpu: world=1 depth=8 batch=256 device=Tesla T4 cap=(7, 5)
+
+  width  params_M  grad_MiB  bucket  accum    s/step   samples/s   comm_ms   comm%
+    256      0.54       2.1      25      1      2.22      115514      0.00    0.0%
+    512      2.13       8.1      25      1      2.52      101729      0.00    0.0%
+   1024      8.46      32.3      25      1      4.59       55783      0.00    0.0%
+   2048     33.70     128.6      25      1     13.89       18429      0.00    0.0%
+   4096    134.51     513.1      25      1     54.15        4728      0.00    0.0%
+   8192    537.46    2050.3      25      1    223.36        1146      0.00    0.0%
+
+wrote results/ddp_sweep.json (6 rows total)
+
+$ [2 ranks] 02_ddp_sweep.py --tag 2gpu_ddp
+[W825 01:42:06.779064539 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:42:06.798326946 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:42:14.782200697 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+2gpu_ddp: world=2 depth=8 batch=256 device=Tesla T4 cap=(7, 5)
+
+  width  params_M  grad_MiB  bucket  accum    s/step   samples/s   comm_ms   comm%
+    256      0.54       2.1      25      1      2.98      171669      0.45   15.0%
+    512      2.13       8.1      25      1      4.33      118296      1.70   39.2%
+   1024      8.46      32.3      25      1     11.63       44039      7.82   67.2%
+   2048     33.70     128.6      25      1     40.70       12579     26.82   65.9%
+   4096    134.51     513.1      25      1    157.02        3261    101.33   64.5%
+   8192    537.46    2050.3      25      1    671.56         762    434.10   64.6%
+
+wrote results/ddp_sweep.json (12 rows total)
+
+$ [2 ranks] 02_ddp_sweep.py --tag bucket --bucket-mbs 1 5 25 100
+[W825 01:43:15.513186456 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:43:15.532266729 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:43:23.516357260 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+bucket: world=2 depth=8 batch=256 device=Tesla T4 cap=(7, 5)
+
+  width  params_M  grad_MiB  bucket  accum    s/step   samples/s   comm_ms   comm%
+    256      0.54       2.1       1      1      3.16      162074      0.70   22.0%
+    256      0.54       2.1       5      1      3.56      143649      0.26    7.2%
+    256      0.54       2.1      25      1      3.12      163977      0.71   22.8%
+    256      0.54       2.1     100      1      3.21      159596      0.36   11.2%
+    512      2.13       8.1       1      1      4.14      123778      1.27   30.7%
+    512      2.13       8.1       5      1      4.24      120851      1.51   35.7%
+    512      2.13       8.1      25      1      3.86      132795      0.90   23.4%
+    512      2.13       8.1     100      1      3.73      137343      1.28   34.4%
+   1024      8.46      32.3       1      1     10.43       49093      6.44   61.8%
+   1024      8.46      32.3       5      1     10.95       46748      6.99   63.8%
+   1024      8.46      32.3      25      1     11.68       43848      7.73   66.2%
+   1024      8.46      32.3     100      1     12.07       42421      8.10   67.1%
+   2048     33.70     128.6       1      1     40.31       12701     25.82   64.0%
+   2048     33.70     128.6       5      1     40.63       12602     26.15   64.4%
+   2048     33.70     128.6      25      1     40.58       12616     26.05   64.2%
+   2048     33.70     128.6     100      1     44.16       11595     30.51   69.1%
+   4096    134.51     513.1       1      1    157.23        3256     98.15   62.4%
+   4096    134.51     513.1       5      1    157.46        3252     97.34   61.8%
+   4096    134.51     513.1      25      1    157.89        3243     97.14   61.5%
+   4096    134.51     513.1     100      1    160.42        3192     99.31   61.9%
+   8192    537.46    2050.3       1      1    691.32         741    422.82   61.2%
+   8192    537.46    2050.3       5      1    691.71         740    433.10   62.6%
+   8192    537.46    2050.3      25      1    693.20         739    430.55   62.1%
+   8192    537.46    2050.3     100      1    693.69         738    437.97   63.1%
+
+wrote results/ddp_sweep.json (36 rows total)
+
+$ [2 ranks] 02_ddp_sweep.py --tag accum --accums 1 2 4 8
+[W825 01:46:55.773375883 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:46:55.826678591 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:47:03.775577558 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+accum: world=2 depth=8 batch=256 device=Tesla T4 cap=(7, 5)
+
+  width  params_M  grad_MiB  bucket  accum    s/step   samples/s   comm_ms   comm%
+    256      0.54       2.1      25      1      3.41      150150      1.05   30.8%
+    256      0.54       2.1      25      2      5.57      183811      0.41    7.3%
+    256      0.54       2.1      25      4     10.90      187805      1.00    9.1%
+    256      0.54       2.1      25      8     19.65      208457      0.00    0.0%
+    512      2.13       8.1      25      1      3.80      134707      1.35   35.5%
+    512      2.13       8.1      25      2      5.49      186392      0.86   15.7%
+    512      2.13       8.1      25      4     10.09      202924      0.10    1.0%
+    512      2.13       8.1      25      8     20.73      197558      1.00    4.8%
+   1024      8.46      32.3      25      1     11.69       43786      7.60   65.0%
+   1024      8.46      32.3      25      2     15.03       68150      6.70   44.6%
+   1024      8.46      32.3      25      4     23.34       87749      6.17   26.4%
+   1024      8.46      32.3      25      8     40.88      100191      6.14   15.0%
+   2048     33.70     128.6      25      1     40.67       12590     25.88   63.6%
+   2048     33.70     128.6      25      2     52.19       19622     22.36   42.8%
+   2048     33.70     128.6      25      4     81.24       25209     20.58   25.3%
+   2048     33.70     128.6      25      8    151.36       27062     26.61   17.6%
+   4096    134.51     513.1      25      1    158.00        3241     93.88   59.4%
+   4096    134.51     513.1      25      2    220.50        4644     97.28   44.1%
+   4096    134.51     513.1      25      4    352.74        5806    113.36   32.1%
+   4096    134.51     513.1      25      8    623.23        6572    122.22   19.6%
+   8192    537.46    2050.3      25      1    689.14         743    438.45   63.6%
+   8192    537.46    2050.3      25      2    988.27        1036    493.67   50.0%
+   8192    537.46    2050.3      25      4   1544.80        1326    566.38   36.7%
+   8192    537.46    2050.3      25      8   2653.92        1543    687.62   25.9%
+
+wrote results/ddp_sweep.json (60 rows total)
+
+$ [2 ranks] 02_ddp_sweep.py --tag fp16hook --fp16-hook
+[W825 01:55:02.836050549 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:55:03.854317341 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:55:10.839058481 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+fp16hook: world=2 depth=8 batch=256 device=Tesla T4 cap=(7, 5)
+
+  width  params_M  grad_MiB  bucket  accum    s/step   samples/s   comm_ms   comm%
+    256      0.54       2.1      25      1      3.59      142734      1.13   31.5%
+    512      2.13       8.1      25      1      3.74      137057      1.20   32.2%
+   1024      8.46      32.3      25      1      8.75       58524      4.76   54.4%
+   2048     33.70     128.6      25      1     28.31       18084     13.82   48.8%
+   4096    134.51     513.1      25      1    120.00        4267     61.02   50.8%
+   8192    537.46    2050.3      25      1    511.54        1001    256.01   50.0%
+
+wrote results/ddp_sweep.json (66 rows total)
+
+$ [2 ranks] 02_ddp_sweep.py --tag fsdp --fsdp
+[W825 01:56:06.069838485 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:56:06.073043284 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+[W825 01:56:14.073146591 socket.cpp:207] [c10d] The hostname of the client socket cannot be retrieved. err=-3
+/usr/local/lib/python3.12/dist-packages/torch/distributed/c10d_logger.py:83: UserWarning: barrier(): using the device under current context. You can specify `device_id` in `init_process_group` to mute this warning.
+  return func(*args, **kwargs)
+fsdp: world=2 depth=8 batch=256 device=Tesla T4 cap=(7, 5)
+
+  width  params_M  grad_MiB  bucket  accum    s/step   samples/s   comm_ms   comm%
+    256      0.54       2.1      25      1      4.59      111454      0.00    0.0%
+    512      2.13       8.1      25      1      5.87       87263      0.00    0.0%
+   1024      8.46      32.3      25      1     14.32       35755      0.00    0.0%
+   2048     33.70     128.6      25      1     52.44        9764      0.00    0.0%
+   4096    134.51     513.1      25      1    202.49        2528      0.00    0.0%
+   8192    537.46    2050.3      25      1   1027.45         498      0.00    0.0%
+
+wrote results/ddp_sweep.json (72 rows total)
+
+$ [1 rank] 03_report.py 
+=== crossover: does the second GPU pay? ===
+  width  params_M  grad_MiB   1gpu sps   2gpu sps  scaling   comm%  verdict
+    256      0.54       2.1     115514     171669     1.49   15.0%  sublinear
+    512      2.13       8.1     101729     118296     1.16   39.2%  sublinear
+   1024      8.46      32.3      55783      44039     0.79   67.2%  2 GPUs SLOWER
+   2048     33.70     128.6      18429      12579     0.68   65.9%  2 GPUs SLOWER
+   4096    134.51     513.1       4728       3261     0.69   64.5%  2 GPUs SLOWER
+   8192    537.46    2050.3       1146        762     0.67   64.6%  2 GPUs SLOWER
+
+CROSSOVER: 2-GPU DDP is slower than 1 GPU at width <= 8192 (537.46M params, 2050.3 MiB of gradient); it starts paying at width 256 (0.54M params)
+
+NCCL context: peak all-reduce bus bandwidth 4.05 GB/s, small-message floor 46.1 us
+A gradient buffer that is small enough to sit on the latency floor pays the same cost no matter how small it gets, which is what makes the second GPU a net loss below the crossover.
+
+=== what each mitigation recovers ===
+
+  bucket_cap_mb
+    width           1           5          25         100    baseline
+      256      162074      143649      163977      159596      171669
+      512      123778      120851      132795      137343      118296
+     1024       49093       46748       43848       42421       44039
+     2048       12701       12602       12616       11595       12579
+     4096        3256        3252        3243        3192        3261
+     8192         741         740         739         738         762
+
+  grad accumulation
+    width           1           2           4           8    baseline
+      256      150150      183811      187805      208457      171669
+      512      134707      186392      202924      197558      118296
+     1024       43786       68150       87749      100191       44039
+     2048       12590       19622       25209       27062       12579
+     4096        3241        4644        5806        6572        3261
+     8192         743        1036        1326        1543         762
+
+  fp16 grad compression
+    width    fp16hook    baseline
+      256      142734      171669
+      512      137057      118296
+     1024       58524       44039
+     2048       18084       12579
+     4096        4267        3261
+     8192        1001         762
+
+  FSDP instead of DDP
+    width        fsdp    baseline
+      256      111454      171669
+      512       87263      118296
+     1024       35755       44039
+     2048        9764       12579
+     4096        2528        3261
+     8192         498         762
+
+=== raw JSON for retrieval ===
+
+----8<---- results/ddp_sweep.json ----8<----
+{"rows": [{"tag": "1gpu", "world": 1, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0022161771666674213, "samples_per_s": 115514.23047326143, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "1gpu", "world": 1, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.002516495133333289, "samples_per_s": 101728.78803103766, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "1gpu", "world": 1, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0045892508333338355, "samples_per_s": 55782.525143440515, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "1gpu", "world": 1, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.01389096596666756, "samples_per_s": 18429.24391394318, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "1gpu", "world": 1, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.05414615700000051, "samples_per_s": 4727.94403488317, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "1gpu", "world": 1, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.2233638603666672, "samples_per_s": 1146.1119967203215, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "2gpu_ddp", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0029824775333319544, "samples_per_s": 171669.35686117492, "comm_s": 0.0004465711666644741, "comm_frac": 0.14973161127741177}, {"tag": "2gpu_ddp", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.004328129999998964, "samples_per_s": 118295.89222138027, "comm_s": 0.0016972890999985184, "comm_frac": 0.39215298523818015}, {"tag": "2gpu_ddp", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.011625970399999611, "samples_per_s": 44039.334557398935, "comm_s": 0.007815135466665879, "comm_frac": 0.6722136043513529}, {"tag": "2gpu_ddp", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.04070139960000082, "samples_per_s": 12579.419996161254, "comm_s": 0.026817603933333586, "comm_frac": 0.6588865296252133}, {"tag": "2gpu_ddp", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.15701691313333488, "samples_per_s": 3260.7952212461487, "comm_s": 0.10133298496666801, "comm_frac": 0.6453635022146853}, {"tag": "2gpu_ddp", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.6715614968333341, "samples_per_s": 762.4022556597918, "comm_s": 0.43410219666666683, "comm_frac": 0.6464072146983151}, {"tag": "bucket", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 1, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0031590479666666247, "samples_per_s": 162074.1455661574, "comm_s": 0.0006951909333338339, "comm_frac": 0.2200634307137121}, {"tag": "bucket", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 5, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0035642465999994027, "samples_per_s": 143648.8709844279, "comm_s": 0.0002558951666647622, "comm_frac": 0.07179502301125996}, {"tag": "bucket", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0031223884666663555, "samples_per_s": 163977.0340769421, "comm_s": 0.0007127999333344328, "comm_frac": 0.22828675577816865}, {"tag": "bucket", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 100, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0032080904666656807, "samples_per_s": 159596.49683200664, "comm_s": 0.00036045023333220643, "comm_frac": 0.11235662992597566}, {"tag": "bucket", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 1, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.004136431166667383, "samples_per_s": 123778.19897641505, "comm_s": 0.0012691877333338652, "comm_frac": 0.30683158553715695}, {"tag": "bucket", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 5, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0042366044999994305, "samples_per_s": 120851.49793899072, "comm_s": 0.0015113067333326555, "comm_frac": 0.3567259425166684}, {"tag": "bucket", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0038555563999996896, "samples_per_s": 132795.35996413935, "comm_s": 0.000902982999999343, "comm_frac": 0.23420303227814684}, {"tag": "bucket", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 100, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0037278796000009607, "samples_per_s": 137343.49145821878, "comm_s": 0.0012807137000000542, "comm_frac": 0.3435501779616821}, {"tag": "bucket", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 1, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.010429140733333498, "samples_per_s": 49093.210370011744, "comm_s": 0.00644169046666813, "comm_frac": 0.6176626273801517}, {"tag": "bucket", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 5, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.010952422533334054, "samples_per_s": 46747.64860848925, "comm_s": 0.006988397800000713, "comm_frac": 0.6380686810366654}, {"tag": "bucket", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.011676613766665393, "samples_per_s": 43848.328824720295, "comm_s": 0.007730414533331972, "comm_frac": 0.6620424968924551}, {"tag": "bucket", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 100, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.012069441800000883, "samples_per_s": 42421.183057526534, "comm_s": 0.008096722400000544, "comm_frac": 0.6708448107351536}, {"tag": "bucket", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 1, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.04031095266666587, "samples_per_s": 12701.262712240128, "comm_s": 0.025816368333333152, "comm_frac": 0.6404306181203538}, {"tag": "bucket", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 5, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.04062753603333249, "samples_per_s": 12602.29021961692, "comm_s": 0.02615141086666502, "comm_frac": 0.6436868542854614}, {"tag": "bucket", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.040584274933333594, "samples_per_s": 12615.723721590319, "comm_s": 0.026051665733333115, "comm_frac": 0.6419152683182661}, {"tag": "bucket", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 100, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0441575837333346, "samples_per_s": 11594.837323797921, "comm_s": 0.030511042466667956, "comm_frac": 0.6909581523056738}, {"tag": "bucket", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 1, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.15723455639999884, "samples_per_s": 3256.281645222384, "comm_s": 0.09815390969999763, "comm_frac": 0.6242515128181985}, {"tag": "bucket", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 5, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.15746097043333218, "samples_per_s": 3251.5994191511545, "comm_s": 0.0973385191333326, "comm_frac": 0.618175531787066}, {"tag": "bucket", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.15788728723333254, "samples_per_s": 3242.819665672922, "comm_s": 0.09713880619999977, "comm_frac": 0.6152414668854492}, {"tag": "bucket", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 100, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.16042195193333175, "samples_per_s": 3191.583158224987, "comm_s": 0.09930635953333156, "comm_frac": 0.6190322355297194}, {"tag": "bucket", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 1, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.6913249997666658, "samples_per_s": 740.6068060214933, "comm_s": 0.4228223065999998, "comm_frac": 0.6116114804798173}, {"tag": "bucket", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 5, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.691711276866666, "samples_per_s": 740.1932238538492, "comm_s": 0.43310420526666654, "comm_frac": 0.6261343710175648}, {"tag": "bucket", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.6932025859333332, "samples_per_s": 738.600822313205, "comm_s": 0.4305492346333305, "comm_frac": 0.6211015991142558}, {"tag": "bucket", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 100, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.6936947178999996, "samples_per_s": 738.076832341987, "comm_s": 0.43796829063333387, "comm_frac": 0.6313559543298551}, {"tag": "accum", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.003409928666667383, "samples_per_s": 150149.76852885066, "comm_s": 0.001050305733334274, "comm_frac": 0.3080139897356758}, {"tag": "accum", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 2, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0055709393333359, "samples_per_s": 183811.0126011415, "comm_s": 0.0004068850000029066, "comm_frac": 0.07303705455346653}, {"tag": "accum", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 4, "fp16_hook": false, "fsdp": false, "s_per_step": 0.010904906300000523, "samples_per_s": 187805.3734400177, "comm_s": 0.0009961233333304637, "comm_frac": 0.0913463450236538}, {"tag": "accum", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 8, "fp16_hook": false, "fsdp": false, "s_per_step": 0.01964911719999994, "samples_per_s": 208457.20234189514, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "accum", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0038008398666647737, "samples_per_s": 134707.06947969334, "comm_s": 0.0013477726666640895, "comm_frac": 0.3545986450217794}, {"tag": "accum", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 2, "fp16_hook": false, "fsdp": false, "s_per_step": 0.0054937920333334965, "samples_per_s": 186392.20301512984, "comm_s": 0.0008616968333361305, "comm_frac": 0.15684919052410404}, {"tag": "accum", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 4, "fp16_hook": false, "fsdp": false, "s_per_step": 0.010092472966664445, "samples_per_s": 202923.50613814552, "comm_s": 0.00010274433332900339, "comm_frac": 0.0101802931420643}, {"tag": "accum", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 8, "fp16_hook": false, "fsdp": false, "s_per_step": 0.020733199899999968, "samples_per_s": 197557.54151581813, "comm_s": 0.0010004954000009982, "comm_frac": 0.048255715703633364}, {"tag": "accum", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.011693214566666181, "samples_per_s": 43786.07756498005, "comm_s": 0.007599544766666593, "comm_frac": 0.649910657444925}, {"tag": "accum", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 2, "fp16_hook": false, "fsdp": false, "s_per_step": 0.01502562539999796, "samples_per_s": 68150.24152007271, "comm_s": 0.006697962199996256, "comm_frac": 0.4457692789277953}, {"tag": "accum", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 4, "fp16_hook": false, "fsdp": false, "s_per_step": 0.023339283166668185, "samples_per_s": 87749.05318963845, "comm_s": 0.006172150533336661, "comm_frac": 0.26445330343955764}, {"tag": "accum", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 8, "fp16_hook": false, "fsdp": false, "s_per_step": 0.04088194130000223, "samples_per_s": 100190.93687216307, "comm_s": 0.006138127799999893, "comm_frac": 0.15014276731519982}, {"tag": "accum", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.040667459266668024, "samples_per_s": 12589.918554849255, "comm_s": 0.02588298873333391, "comm_frac": 0.6364545314624117}, {"tag": "accum", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 2, "fp16_hook": false, "fsdp": false, "s_per_step": 0.052186753133332785, "samples_per_s": 19621.83769861608, "comm_s": 0.022357662433334247, "comm_frac": 0.42841642928450235}, {"tag": "accum", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 4, "fp16_hook": false, "fsdp": false, "s_per_step": 0.08124213889999889, "samples_per_s": 25208.592827927478, "comm_s": 0.02058377306666443, "comm_frac": 0.25336325883789246}, {"tag": "accum", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 8, "fp16_hook": false, "fsdp": false, "s_per_step": 0.15135522333333332, "samples_per_s": 27062.164818582303, "comm_s": 0.026605246833332777, "comm_frac": 0.17578016963933507}, {"tag": "accum", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.15800016813333287, "samples_per_s": 3240.5028807813324, "comm_s": 0.09387822490000039, "comm_frac": 0.5941653481075958}, {"tag": "accum", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 2, "fp16_hook": false, "fsdp": false, "s_per_step": 0.22050120963333106, "samples_per_s": 4643.965453535597, "comm_s": 0.09728122426666536, "comm_frac": 0.44118227028519796}, {"tag": "accum", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 4, "fp16_hook": false, "fsdp": false, "s_per_step": 0.3527432842333345, "samples_per_s": 5805.922016208473, "comm_s": 0.11335814506666872, "comm_frac": 0.3213615967573857}, {"tag": "accum", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 8, "fp16_hook": false, "fsdp": false, "s_per_step": 0.6232342444333351, "samples_per_s": 6572.167746854502, "comm_s": 0.122215856566667, "comm_frac": 0.19609939225626097}, {"tag": "accum", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": false, "s_per_step": 0.689144462466667, "samples_per_s": 742.9501764657432, "comm_s": 0.4384488056333339, "comm_frac": 0.6362219092118745}, {"tag": "accum", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 2, "fp16_hook": false, "fsdp": false, "s_per_step": 0.9882688734999988, "samples_per_s": 1036.1552685287536, "comm_s": 0.4936695162999968, "comm_frac": 0.4995295607678545}, {"tag": "accum", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 4, "fp16_hook": false, "fsdp": false, "s_per_step": 1.5448015219666673, "samples_per_s": 1325.736653465176, "comm_s": 0.5663811064666675, "comm_frac": 0.36663681282862465}, {"tag": "accum", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 8, "fp16_hook": false, "fsdp": false, "s_per_step": 2.6539228417000005, "samples_per_s": 1543.375691124562, "comm_s": 0.6876201420333323, "comm_frac": 0.2590957548686191}, {"tag": "fp16hook", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 1, "fp16_hook": true, "fsdp": false, "s_per_step": 0.0035870830666681285, "samples_per_s": 142734.3583865128, "comm_s": 0.0011290792666689715, "comm_frac": 0.314762509170918}, {"tag": "fp16hook", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 1, "fp16_hook": true, "fsdp": false, "s_per_step": 0.003735683033331346, "samples_per_s": 137056.59592415072, "comm_s": 0.0012036693000027302, "comm_frac": 0.3222086267124601}, {"tag": "fp16hook", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 1, "fp16_hook": true, "fsdp": false, "s_per_step": 0.008748598300000292, "samples_per_s": 58523.66087033427, "comm_s": 0.004756416700001865, "comm_frac": 0.5436775740408274}, {"tag": "fp16hook", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 1, "fp16_hook": true, "fsdp": false, "s_per_step": 0.02831299140000283, "samples_per_s": 18083.57134597755, "comm_s": 0.01382372696667365, "comm_frac": 0.4882467829475719}, {"tag": "fp16hook", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": true, "fsdp": false, "s_per_step": 0.11999550016666945, "samples_per_s": 4266.826666740422, "comm_s": 0.061016233200007264, "comm_frac": 0.5084876775817252}, {"tag": "fp16hook", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": true, "fsdp": false, "s_per_step": 0.5115398035999987, "samples_per_s": 1000.8996296999034, "comm_s": 0.2560054347333334, "comm_frac": 0.500460439112805}, {"tag": "fsdp", "world": 2, "width": 256, "params": 542784, "grad_mib": 2.070556640625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": true, "s_per_step": 0.0045938107999972996, "samples_per_s": 111454.30717353466, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "fsdp", "world": 2, "width": 512, "params": 2134080, "grad_mib": 8.140869140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": true, "s_per_step": 0.0058673120333348075, "samples_per_s": 87263.1278328305, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "fsdp", "world": 2, "width": 1024, "params": 8462400, "grad_mib": 32.281494140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": true, "s_per_step": 0.01431950423333698, "samples_per_s": 35755.42781767696, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "fsdp", "world": 2, "width": 2048, "params": 33701952, "grad_mib": 128.562744140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": true, "s_per_step": 0.052435018566666255, "samples_per_s": 9764.466839065568, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "fsdp", "world": 2, "width": 4096, "params": 134512704, "grad_mib": 513.125244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": true, "s_per_step": 0.20249479486666738, "samples_per_s": 2528.460054181275, "comm_s": 0.0, "comm_frac": 0.0}, {"tag": "fsdp", "world": 2, "width": 8192, "params": 537460800, "grad_mib": 2050.250244140625, "bucket_mb": 25, "accum": 1, "fp16_hook": false, "fsdp": true, "s_per_step": 1.0274489118000019, "samples_per_s": 498.32161397010015, "comm_s": 0.0, "comm_frac": 0.0}]}
+
+----8<---- results/nccl_fp16.json ----8<----
+{"world": 2, "dtype": "fp16", "device": "Tesla T4", "peak_allreduce_busbw_gbs": 4.053328736694569, "rows": [{"bytes": 4096, "allreduce_s": 4.6078398823738095e-05, "allreduce_algbw_gbs": 0.08889197768499443, "allreduce_busbw_gbs": 0.08889197768499443, "allgather_s": 3.7024000287055966e-05, "allgather_busbw_gbs": 0.055315470616933995}, {"bytes": 8192, "allreduce_s": 3.950720131397247e-05, "allreduce_algbw_gbs": 0.20735460188375188, "allreduce_busbw_gbs": 0.20735460188375188, "allgather_s": 4.013279974460602e-05, "allgather_busbw_gbs": 0.1020611576083853}, {"bytes": 16384, "allreduce_s": 4.5521599054336546e-05, "allreduce_algbw_gbs": 0.3599170578441972, "allreduce_busbw_gbs": 0.3599170578441972, "allgather_s": 4.1705599427223205e-05, "allgather_busbw_gbs": 0.1964244636813132}, {"bytes": 32768, "allreduce_s": 4.5456001162528996e-05, "allreduce_algbw_gbs": 0.7208729136299793, "allreduce_busbw_gbs": 0.7208729136299793, "allgather_s": 3.99183988571167e-05, "allgather_busbw_gbs": 0.4104373038268553}, {"bytes": 65536, "allreduce_s": 5.538240075111389e-05, "allreduce_algbw_gbs": 1.1833362062889967, "allreduce_busbw_gbs": 1.1833362062889967, "allgather_s": 6.552479863166809e-05, "allgather_busbw_gbs": 0.5000854742674974}, {"bytes": 131072, "allreduce_s": 9.171199798583985e-05, "allreduce_algbw_gbs": 1.4291696057067391, "allreduce_busbw_gbs": 1.4291696057067391, "allgather_s": 8.715199828147888e-05, "allgather_busbw_gbs": 0.751973578257326}, {"bytes": 262144, "allreduce_s": 0.0001272752046585083, "allreduce_algbw_gbs": 2.059662765448759, "allreduce_busbw_gbs": 2.059662765448759, "allgather_s": 0.0001244160056114197, "allgather_busbw_gbs": 1.0534978948718907}, {"bytes": 524288, "allreduce_s": 0.00018829599618911744, "allreduce_algbw_gbs": 2.784382093145649, "allreduce_busbw_gbs": 2.784382093145649, "allgather_s": 0.00020611679553985597, "allgather_busbw_gbs": 1.2718226057871653}, {"bytes": 1048576, "allreduce_s": 0.0003108975887298584, "allreduce_algbw_gbs": 3.3727376409828533, "allreduce_busbw_gbs": 3.3727376409828533, "allgather_s": 0.0003643392086029053, "allgather_busbw_gbs": 1.4390106461789665}, {"bytes": 2097152, "allreduce_s": 0.0005678880214691162, "allreduce_algbw_gbs": 3.692897051384717, "allreduce_busbw_gbs": 3.692897051384717, "allgather_s": 0.0006924287796020508, "allgather_busbw_gbs": 1.5143449129925426}, {"bytes": 4194304, "allreduce_s": 0.0010798432350158692, "allreduce_algbw_gbs": 3.8841786140729595, "allreduce_busbw_gbs": 3.8841786140729595, "allgather_s": 0.0013311792373657226, "allgather_busbw_gbs": 1.5754091869326814}, {"bytes": 8388608, "allreduce_s": 0.002072857666015625, "allreduce_algbw_gbs": 4.046880853196395, "allreduce_busbw_gbs": 4.046880853196395, "allgather_s": 0.002316270446777344, "allgather_busbw_gbs": 1.810800636789019}, {"bytes": 16777216, "allreduce_s": 0.004153387069702148, "allreduce_algbw_gbs": 4.0394058435789235, "allreduce_busbw_gbs": 4.0394058435789235, "allgather_s": 0.0052537296295166016, "allgather_busbw_gbs": 1.5966957935693848}, {"bytes": 33554432, "allreduce_s": 0.008327552032470703, "allreduce_algbw_gbs": 4.029327210345238, "allreduce_busbw_gbs": 4.029327210345238, "allgather_s": 0.010466111755371094, "allgather_busbw_gbs": 1.6030037125669059}, {"bytes": 67108864, "allreduce_s": 0.016597811889648435, "allreduce_algbw_gbs": 4.043235605161534, "allreduce_busbw_gbs": 4.043235605161534, "allgather_s": 0.02086982421875, "allgather_busbw_gbs": 1.6077965798031886}, {"bytes": 134217728, "allreduce_s": 0.033155474853515624, "allreduce_algbw_gbs": 4.048131676381896, "allreduce_busbw_gbs": 4.048131676381896, "allgather_s": 0.04082854919433594, "allgather_busbw_gbs": 1.6436749608852101}, {"bytes": 268435456, "allreduce_s": 0.066225927734375, "allreduce_algbw_gbs": 4.053328736694569, "allreduce_busbw_gbs": 4.053328736694569, "allgather_s": 0.0774434814453125, "allgather_busbw_gbs": 1.7331055564021771}]}
+
+----8<---- results/nccl_fp32.json ----8<----
+{"world": 2, "dtype": "fp32", "device": "Tesla T4", "peak_allreduce_busbw_gbs": 4.041441438730586, "rows": [{"bytes": 4096, "allreduce_s": 9.422079920768738e-05, "allreduce_algbw_gbs": 0.04347235466525115, "allreduce_busbw_gbs": 0.04347235466525115, "allgather_s": 7.149760127067566e-05, "allgather_busbw_gbs": 0.02864431762188329}, {"bytes": 8192, "allreduce_s": 8.130720257759093e-05, "allreduce_algbw_gbs": 0.10075368159644194, "allreduce_busbw_gbs": 0.10075368159644194, "allgather_s": 7.45472013950348e-05, "allgather_busbw_gbs": 0.0549450539168438}, {"bytes": 16384, "allreduce_s": 8.305919766426087e-05, "allreduce_algbw_gbs": 0.1972569018331583, "allreduce_busbw_gbs": 0.1972569018331583, "allgather_s": 4.271360039710999e-05, "allgather_busbw_gbs": 0.19178903028165878}, {"bytes": 32768, "allreduce_s": 4.496000111103058e-05, "allreduce_algbw_gbs": 0.7288256047654017, "allreduce_busbw_gbs": 0.7288256047654017, "allgather_s": 4.1414400935173035e-05, "allgather_busbw_gbs": 0.39561117944567814}, {"bytes": 65536, "allreduce_s": 5.54032027721405e-05, "allreduce_algbw_gbs": 1.1828919037322292, "allreduce_busbw_gbs": 1.1828919037322292, "allgather_s": 6.568480134010315e-05, "allgather_busbw_gbs": 0.4988673076794989}, {"bytes": 131072, "allreduce_s": 9.107679724693299e-05, "allreduce_algbw_gbs": 1.4391371234171704, "allreduce_busbw_gbs": 1.4391371234171704, "allgather_s": 8.448479771614074e-05, "allgather_busbw_gbs": 0.7757135220965252}, {"bytes": 262144, "allreduce_s": 0.0001253391981124878, "allreduce_algbw_gbs": 2.0914766006779013, "allreduce_busbw_gbs": 2.0914766006779013, "allgather_s": 0.00012392319440841676, "allgather_busbw_gbs": 1.057687389561818}, {"bytes": 524288, "allreduce_s": 0.000300543999671936, "allreduce_algbw_gbs": 1.7444633749876746, "allreduce_busbw_gbs": 1.7444633749876746, "allgather_s": 0.0002061311960220337, "allgather_busbw_gbs": 1.2717337552923287}, {"bytes": 1048576, "allreduce_s": 0.00031535038948059084, "allreduce_algbw_gbs": 3.325114015958866, "allreduce_busbw_gbs": 3.325114015958866, "allgather_s": 0.0003643392086029053, "allgather_busbw_gbs": 1.4390106461789665}, {"bytes": 2097152, "allreduce_s": 0.0005647696018218994, "allreduce_algbw_gbs": 3.713287672060896, "allreduce_busbw_gbs": 3.713287672060896, "allgather_s": 0.0007007215976715088, "allgather_busbw_gbs": 1.4964231208006262}, {"bytes": 4194304, "allreduce_s": 0.001084928035736084, "allreduce_algbw_gbs": 3.8659743889412153, "allreduce_busbw_gbs": 3.8659743889412153, "allgather_s": 0.0013544159889221192, "allgather_busbw_gbs": 1.5483810122981272}, {"bytes": 8388608, "allreduce_s": 0.002076006317138672, "allreduce_algbw_gbs": 4.040743002922019, "allreduce_busbw_gbs": 4.040743002922019, "allgather_s": 0.0023298063278198245, "allgather_busbw_gbs": 1.8002801133796071}, {"bytes": 16777216, "allreduce_s": 0.004174833679199219, "allreduce_algbw_gbs": 4.018654942732488, "allreduce_busbw_gbs": 4.018654942732488, "allgather_s": 0.005251155090332031, "allgather_busbw_gbs": 1.5974786224547763}, {"bytes": 33554432, "allreduce_s": 0.008340415954589845, "allreduce_algbw_gbs": 4.023112538114425, "allreduce_busbw_gbs": 4.023112538114425, "allgather_s": 0.010450534057617188, "allgather_busbw_gbs": 1.6053931701003756}, {"bytes": 67108864, "allreduce_s": 0.01661940460205078, "allreduce_algbw_gbs": 4.037982443228982, "allreduce_busbw_gbs": 4.037982443228982, "allgather_s": 0.019483737182617186, "allgather_busbw_gbs": 1.7221763815381512}, {"bytes": 134217728, "allreduce_s": 0.03321086120605469, "allreduce_algbw_gbs": 4.041380534134739, "allreduce_busbw_gbs": 4.041380534134739, "allgather_s": 0.039249511718750005, "allgather_busbw_gbs": 1.7098012449398503}, {"bytes": 268435456, "allreduce_s": 0.06642072143554686, "allreduce_algbw_gbs": 4.041441438730586, "allreduce_busbw_gbs": 4.041441438730586, "allgather_s": 0.07651204833984375, "allgather_busbw_gbs": 1.7542038268776283}]}
+/usr/local/lib/python3.12/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\|'
+  cells[i][c] = re.sub('\\\\\|', '|', cell)
+/usr/local/lib/python3.12/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\_'
+  text = re.sub(r'_', '\_', text) # Escape underscores in display text
+[NbConvertApp] Converting notebook __script__.ipynb to html
+[NbConvertApp] Writing 346268 bytes to __results__.html
