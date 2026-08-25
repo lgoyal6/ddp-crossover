@@ -1,0 +1,14 @@
+{
+  "id": "spockg/ddp-crossover-2xt4",
+  "title": "ddp-crossover-2xt4",
+  "code_file": "kaggle_step5.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "accelerator": "nvidiaTeslaT4x2",
+  "dataset_sources": [],
+  "competition_sources": [],
+  "kernel_sources": []
+}
