@@ -72,15 +72,29 @@
     <div class="banner" id="banner">Loading the measurements.</div>
   </div>
 
-  <h3>Why it goes the wrong way</h3>
-  <p>
-    Gradient bytes grow with parameter count and so does arithmetic, so the ratio
-    between them is roughly fixed. On a fast link that ratio is small enough not to
-    matter. On this one, <strong>gradient sync costs about 5x the compute it buys at
-    every width measured</strong>. The models that appear to scale are the ones too
-    small to be doing real work, where the second GPU is parallelizing launch
-    overhead rather than arithmetic.
-  </p>
+  <div class="split">
+    <div>
+      <h3>Why it goes the wrong way</h3>
+      <p>
+        Gradient bytes grow with parameter count and so does arithmetic, so the ratio
+        between them is roughly fixed. On a fast link that ratio is small enough not
+        to matter. On this one, <strong>gradient sync costs about 5x the compute it
+        buys at every width measured</strong>.
+      </p>
+      <p>
+        The models that appear to scale are the ones too small to be doing real work,
+        where the second GPU is parallelizing launch overhead rather than arithmetic.
+      </p>
+    </div>
+    <dl class="takeaway">
+      <dt>the usual advice</dt>
+      <dd>"Add a GPU, get about 2x."</dd>
+      <dt>on this link</dt>
+      <dd>4.05 GB/s<small>About a 175th of each GPU's own memory bandwidth.</small></dd>
+      <dt>so the rule flips</dt>
+      <dd>It pays below roughly 8M parameters.<small>And costs you above.</small></dd>
+    </dl>
+  </div>
 </section>
 
 <section class="gut">
@@ -92,24 +106,34 @@
     whether it can help at all.
   </p>
   <div id="table-wrap"></div>
-  <p>
-    <strong>Compressing the gradients is the only one that works</strong>, and it does
-    not work well enough to reach break even.
-  </p>
-  <p>
-    <code>bucket_cap_mb</code>, the knob most often suggested, is the interesting
-    negative. Across a hundredfold sweep of it, throughput at 537M parameters spans
-    <strong>0.3%</strong>, and at 134M it spans 2%. It only appears to matter on the
-    small models, where the spread reaches 16% and the second GPU was already winning
-    for a different reason. In the regime where you would actually reach for it, it
-    does nothing.
-  </p>
-  <p>
-    FSDP, the framework marketed for scaling, is worse than plain DDP at every size
-    tested, because it adds parameter gathering to a link that was already the problem.
-    Its communication is not instrumented here, so the page reports that rather than a
-    zero.
-  </p>
+  <div class="split">
+    <div>
+      <p>
+        <strong>Compressing the gradients is the only one that works</strong>, and not
+        well enough to reach break even.
+      </p>
+      <p>
+        <code>bucket_cap_mb</code>, the knob most often suggested, is the interesting
+        negative. Across a hundredfold sweep, throughput at 537M parameters spans
+        <strong>0.3%</strong>. It only appears to matter on small models, where the
+        spread reaches 16% and the second GPU was already winning for a different
+        reason. In the regime you would reach for it, it does nothing.
+      </p>
+      <p>
+        FSDP is worse than plain DDP at every size, because it adds parameter
+        gathering to a link that was already the problem. Its communication is not
+        instrumented here, which the page reports rather than showing a zero.
+      </p>
+    </div>
+    <dl class="takeaway">
+      <dt>worth trying</dt>
+      <dd>fp16 gradient compression<small>The only one that moves the number.</small></dd>
+      <dt>not worth trying</dt>
+      <dd>bucket_cap_mb<small>0.3% across a hundredfold sweep at 537M.</small></dd>
+      <dt>actively worse</dt>
+      <dd>FSDP<small>Below plain DDP at every size tested.</small></dd>
+    </dl>
+  </div>
 </section>
 
 <section class="gut">
