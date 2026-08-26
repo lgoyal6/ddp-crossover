@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ddp-crossover - where the second GPU stops paying</title>
+<meta name="description" content="On two T4s over PCIe the second GPU pays on small models and stops paying on large ones, which is the opposite of the usual advice. Drag the model size and watch speedup cross one.">
+<meta property="og:title" content="ddp-crossover">
+<meta property="og:description" content="The second GPU pays on small models and stops paying above roughly 8M parameters. FSDP, marketed for scaling, is worse than plain DDP everywhere.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="gut">
+  <div>
+    <div class="eyebrow">lgoyal6 / ddp-crossover</div>
+    <h1>ddp&#8209;crossover<span class="dot">.</span></h1>
+    <p class="thesis">
+      The advice for a second GPU is "use DDP and you get roughly 2x". That advice
+      assumes an interconnect. On two Tesla T4s over PCIe with no NVLink the link
+      runs at 4.05 GB/s measured, about a 175th of the bandwidth each GPU has to
+      its own memory, and the arithmetic stops working.
+    </p>
+    <p class="thesis">
+      <strong>The crossover runs the opposite direction from the one I went looking
+      for.</strong> The second GPU pays on small models and stops paying on large
+      ones. Drag the model size below and watch speedup cross one.
+    </p>
+  </div>
+  <dl class="facts">
+    <div class="fact"><dt>at 2.1M params</dt><dd>1.16x <small>second GPU pays</small></dd></div>
+    <div class="fact"><dt>at 8.5M params</dt><dd>0.79x <small>it costs you</small></dd></div>
+    <div class="fact"><dt>measured link</dt><dd>4.05 <small>GB/s over PCIe</small></dd></div>
+    <div class="fact"><dt>FSDP, at best</dt><dd>0.53x <small>worse than plain DDP</small></dd></div>
+  </dl>
+</header>
+
+<section class="gut">
+  <div class="eyebrow">Figure 1</div>
+  <h2>Speedup, and the line it has to beat</h2>
+  <p class="lead">
+    Anything below the horizontal line means one GPU was faster. The bars behind the
+    curve are the fraction of each step spent moving gradients rather than computing
+    them.
+  </p>
+
+  <div class="figure">
+    <div class="figcap">
+      <span id="cap-what">2x Tesla T4, PCIe, no NVLink</span>
+      <span id="cap-where">batch 256, throughput against a single GPU at the same width</span>
+    </div>
+
+    <div class="toolbar">
+      <span class="picklabel">Configuration</span>
+      <div class="pick" id="variant" role="group" aria-label="Configuration"></div>
+      <div class="scrub">
+        <span class="picklabel">Model size</span>
+        <input type="range" id="scrub" min="0" max="5" value="2" step="1">
+      </div>
+    </div>
+
+    <canvas class="plot" id="plot" width="1200" height="480"></canvas>
+
+    <dl class="readout">
+      <div><dt>parameters</dt><dd id="r-params">-</dd></div>
+      <div><dt>one GPU</dt><dd id="r-one">-</dd></div>
+      <div><dt>two GPUs</dt><dd id="r-two">-</dd></div>
+      <div><dt>speedup</dt><dd id="r-speed">-</dd></div>
+      <div><dt>step spent on comms</dt><dd id="r-comm">-</dd></div>
+    </dl>
+
+    <div class="banner" id="banner">Loading the measurements.</div>
+  </div>
+
+  <h3>Why it goes the wrong way</h3>
+  <p>
+    Gradient bytes grow with parameter count and so does arithmetic, so the ratio
+    between them is roughly fixed. On a fast link that ratio is small enough not to
+    matter. On this one, <strong>gradient sync costs about 5x the compute it buys at
+    every width measured</strong>. The models that appear to scale are the ones too
+    small to be doing real work, where the second GPU is parallelizing launch
+    overhead rather than arithmetic.
+  </p>
+</section>
+
+<section class="gut">
+  <div class="eyebrow">Figure 2</div>
+  <h2>Which mitigations actually move it</h2>
+  <p class="lead">
+    Four standard answers to "my DDP is slow", measured at every width rather than
+    argued about. Each is shown at its own best setting, since the question is
+    whether it can help at all.
+  </p>
+  <div id="table-wrap"></div>
+  <p>
+    <strong>Compressing the gradients is the only one that works</strong>, and it does
+    not work well enough to reach break even.
+  </p>
+  <p>
+    <code>bucket_cap_mb</code>, the knob most often suggested, is the interesting
+    negative. Across a hundredfold sweep of it, throughput at 537M parameters spans
+    <strong>0.3%</strong>, and at 134M it spans 2%. It only appears to matter on the
+    small models, where the spread reaches 16% and the second GPU was already winning
+    for a different reason. In the regime where you would actually reach for it, it
+    does nothing.
+  </p>
+  <p>
+    FSDP, the framework marketed for scaling, is worse than plain DDP at every size
+    tested, because it adds parameter gathering to a link that was already the problem.
+    Its communication is not instrumented here, so the page reports that rather than a
+    zero.
+  </p>
+</section>
+
+<section class="gut">
+  <div class="eyebrow">Figure 3</div>
+  <h2>Where it loses</h2>
+  <ul class="map">
+    <li>
+      <b>This is a statement about an interconnect, not about DDP.</b> On NVLink or
+      InfiniBand the ratio that drives all of this changes, and the usual advice is
+      probably right again.
+      <span class="where">01_nccl_bench.py</span>
+    </li>
+    <li>
+      <b>Two GPUs is the smallest interesting case.</b> Whether the crossover moves the
+      same way at four or eight is not measured here.
+      <span class="where">02_ddp_sweep.py</span>
+    </li>
+    <li>
+      <b>One model family, one batch size.</b> A wide MLP at batch 256, chosen because
+      it makes the gradient-to-arithmetic ratio easy to vary cleanly, not because it is
+      what anyone trains.
+      <span class="where">02_ddp_sweep.py</span>
+    </li>
+    <li>
+      <b>The small hardware is the point, and also the limit.</b> A pair of T4s is the
+      regime where interconnect cost is large enough to invert the assumption, which is
+      what makes it visible and also what makes it specific.
+      <span class="where">README.md</span>
+    </li>
+  </ul>
+</section>
+
+<footer class="gut">
+  <span>
+    <a href="https://github.com/lgoyal6/ddp-crossover">github.com/lgoyal6/ddp-crossover</a>
+    &middot; MIT
+  </span>
+  <span>
+    also: <a href="https://lgoyal6.github.io/strata/">strata</a>
+    &middot; <a href="https://lgoyal6.github.io/tickvault/">tickvault</a>
+    &middot; <a href="https://lgoyal6.github.io/noisy-rag-bench/">noisy-rag-bench</a>
+  </span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

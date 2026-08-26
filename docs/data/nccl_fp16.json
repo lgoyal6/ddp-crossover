@@ -1,0 +1,144 @@
+{
+  "world": 2,
+  "dtype": "fp16",
+  "device": "Tesla T4",
+  "peak_allreduce_busbw_gbs": 4.053328736694569,
+  "rows": [
+    {
+      "bytes": 4096,
+      "allreduce_s": 4.6078398823738095e-05,
+      "allreduce_algbw_gbs": 0.08889197768499443,
+      "allreduce_busbw_gbs": 0.08889197768499443,
+      "allgather_s": 3.7024000287055966e-05,
+      "allgather_busbw_gbs": 0.055315470616933995
+    },
+    {
+      "bytes": 8192,
+      "allreduce_s": 3.950720131397247e-05,
+      "allreduce_algbw_gbs": 0.20735460188375188,
+      "allreduce_busbw_gbs": 0.20735460188375188,
+      "allgather_s": 4.013279974460602e-05,
+      "allgather_busbw_gbs": 0.1020611576083853
+    },
+    {
+      "bytes": 16384,
+      "allreduce_s": 4.5521599054336546e-05,
+      "allreduce_algbw_gbs": 0.3599170578441972,
+      "allreduce_busbw_gbs": 0.3599170578441972,
+      "allgather_s": 4.1705599427223205e-05,
+      "allgather_busbw_gbs": 0.1964244636813132
+    },
+    {
+      "bytes": 32768,
+      "allreduce_s": 4.5456001162528996e-05,
+      "allreduce_algbw_gbs": 0.7208729136299793,
+      "allreduce_busbw_gbs": 0.7208729136299793,
+      "allgather_s": 3.99183988571167e-05,
+      "allgather_busbw_gbs": 0.4104373038268553
+    },
+    {
+      "bytes": 65536,
+      "allreduce_s": 5.538240075111389e-05,
+      "allreduce_algbw_gbs": 1.1833362062889967,
+      "allreduce_busbw_gbs": 1.1833362062889967,
+      "allgather_s": 6.552479863166809e-05,
+      "allgather_busbw_gbs": 0.5000854742674974
+    },
+    {
+      "bytes": 131072,
+      "allreduce_s": 9.171199798583985e-05,
+      "allreduce_algbw_gbs": 1.4291696057067391,
+      "allreduce_busbw_gbs": 1.4291696057067391,
+      "allgather_s": 8.715199828147888e-05,
+      "allgather_busbw_gbs": 0.751973578257326
+    },
+    {
+      "bytes": 262144,
+      "allreduce_s": 0.0001272752046585083,
+      "allreduce_algbw_gbs": 2.059662765448759,
+      "allreduce_busbw_gbs": 2.059662765448759,
+      "allgather_s": 0.0001244160056114197,
+      "allgather_busbw_gbs": 1.0534978948718907
+    },
+    {
+      "bytes": 524288,
+      "allreduce_s": 0.00018829599618911744,
+      "allreduce_algbw_gbs": 2.784382093145649,
+      "allreduce_busbw_gbs": 2.784382093145649,
+      "allgather_s": 0.00020611679553985597,
+      "allgather_busbw_gbs": 1.2718226057871653
+    },
+    {
+      "bytes": 1048576,
+      "allreduce_s": 0.0003108975887298584,
+      "allreduce_algbw_gbs": 3.3727376409828533,
+      "allreduce_busbw_gbs": 3.3727376409828533,
+      "allgather_s": 0.0003643392086029053,
+      "allgather_busbw_gbs": 1.4390106461789665
+    },
+    {
+      "bytes": 2097152,
+      "allreduce_s": 0.0005678880214691162,
+      "allreduce_algbw_gbs": 3.692897051384717,
+      "allreduce_busbw_gbs": 3.692897051384717,
+      "allgather_s": 0.0006924287796020508,
+      "allgather_busbw_gbs": 1.5143449129925426
+    },
+    {
+      "bytes": 4194304,
+      "allreduce_s": 0.0010798432350158692,
+      "allreduce_algbw_gbs": 3.8841786140729595,
+      "allreduce_busbw_gbs": 3.8841786140729595,
+      "allgather_s": 0.0013311792373657226,
+      "allgather_busbw_gbs": 1.5754091869326814
+    },
+    {
+      "bytes": 8388608,
+      "allreduce_s": 0.002072857666015625,
+      "allreduce_algbw_gbs": 4.046880853196395,
+      "allreduce_busbw_gbs": 4.046880853196395,
+      "allgather_s": 0.002316270446777344,
+      "allgather_busbw_gbs": 1.810800636789019
+    },
+    {
+      "bytes": 16777216,
+      "allreduce_s": 0.004153387069702148,
+      "allreduce_algbw_gbs": 4.0394058435789235,
+      "allreduce_busbw_gbs": 4.0394058435789235,
+      "allgather_s": 0.0052537296295166016,
+      "allgather_busbw_gbs": 1.5966957935693848
+    },
+    {
+      "bytes": 33554432,
+      "allreduce_s": 0.008327552032470703,
+      "allreduce_algbw_gbs": 4.029327210345238,
+      "allreduce_busbw_gbs": 4.029327210345238,
+      "allgather_s": 0.010466111755371094,
+      "allgather_busbw_gbs": 1.6030037125669059
+    },
+    {
+      "bytes": 67108864,
+      "allreduce_s": 0.016597811889648435,
+      "allreduce_algbw_gbs": 4.043235605161534,
+      "allreduce_busbw_gbs": 4.043235605161534,
+      "allgather_s": 0.02086982421875,
+      "allgather_busbw_gbs": 1.6077965798031886
+    },
+    {
+      "bytes": 134217728,
+      "allreduce_s": 0.033155474853515624,
+      "allreduce_algbw_gbs": 4.048131676381896,
+      "allreduce_busbw_gbs": 4.048131676381896,
+      "allgather_s": 0.04082854919433594,
+      "allgather_busbw_gbs": 1.6436749608852101
+    },
+    {
+      "bytes": 268435456,
+      "allreduce_s": 0.066225927734375,
+      "allreduce_algbw_gbs": 4.053328736694569,
+      "allreduce_busbw_gbs": 4.053328736694569,
+      "allgather_s": 0.0774434814453125,
+      "allgather_busbw_gbs": 1.7331055564021771
+    }
+  ]
+}
