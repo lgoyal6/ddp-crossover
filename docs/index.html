@@ -31,7 +31,7 @@
     <div class="fact"><dt>at 2.1M params</dt><dd>1.16x <small>second GPU pays</small></dd></div>
     <div class="fact"><dt>at 8.5M params</dt><dd>0.79x <small>it costs you</small></dd></div>
     <div class="fact"><dt>measured link</dt><dd>4.05 <small>GB/s over PCIe</small></dd></div>
-    <div class="fact"><dt>FSDP, at best</dt><dd>0.53x <small>worse than plain DDP</small></dd></div>
+    <div class="fact"><dt>fixed by accumulation</dt><dd>1.80x <small>at a bigger effective batch</small></dd></div>
   </dl>
 </header>
 
@@ -109,29 +109,36 @@
   <div class="split">
     <div>
       <p>
-        <strong>Compressing the gradients is the only one that works</strong>, and not
-        well enough to reach break even.
+        <strong>Only gradient accumulation rescues it.</strong> At x8 it turns every
+        losing width into a win, because syncing once per eight micro-batches divides
+        communication by eight: the share of the step spent on comms falls from 65%
+        to 15%. It is also the bluntest instrument here, multiplying the effective
+        batch by the same eight, which changes the optimization problem rather than
+        only its execution.
       </p>
       <p>
-        <code>bucket_cap_mb</code>, the knob most often suggested, is the interesting
-        negative. Across a hundredfold sweep, throughput at 537M parameters spans
-        <strong>0.3%</strong>. It only appears to matter on small models, where the
-        spread reaches 16% and the second GPU was already winning for a different
-        reason. In the regime you would reach for it, it does nothing.
+        <strong>fp16 compression is necessary and insufficient.</strong> Halving the
+        bytes on the wire buys about 1.3x and still lands below one GPU at the sizes
+        where it matters.
       </p>
       <p>
-        FSDP is worse than plain DDP at every size, because it adds parameter
-        gathering to a link that was already the problem. Its communication is not
-        instrumented here, which the page reports rather than showing a zero.
+        <code>bucket_cap_mb</code>, the knob most often suggested, does nothing:
+        across a hundredfold sweep, throughput at 537M parameters spans
+        <strong>0.3%</strong>. And FSDP is worse than plain DDP at every size,
+        because it adds an all-gather of parameters on top of the gradient
+        reduce-scatter, and all-gather runs at 1.73 GB/s here against all-reduce's
+        4.05.
       </p>
     </div>
     <dl class="takeaway">
-      <dt>worth trying</dt>
-      <dd>fp16 gradient compression<small>The only one that moves the number.</small></dd>
-      <dt>not worth trying</dt>
+      <dt>the fix</dt>
+      <dd>Gradient accumulation, x8<small>1.80x at 8.5M params, but a bigger effective batch.</small></dd>
+      <dt>helps, not enough</dt>
+      <dd>fp16 gradients<small>About 1.3x, still under one GPU where it counts.</small></dd>
+      <dt>does nothing</dt>
       <dd>bucket_cap_mb<small>0.3% across a hundredfold sweep at 537M.</small></dd>
       <dt>actively worse</dt>
-      <dd>FSDP<small>Below plain DDP at every size tested.</small></dd>
+      <dd>FSDP<small>33 to 35% below plain DDP at every size.</small></dd>
     </dl>
   </div>
 </section>
