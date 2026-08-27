@@ -1,3 +1,9 @@
+<a href="https://lgoyal6.github.io/ddp-crossover/">
+  <img alt="ddp-crossover - open the live demo" src="docs/og.png">
+</a>
+
+**[Open the live demo](https://lgoyal6.github.io/ddp-crossover/)** - Drag the model size and watch the two-GPU speedup cross one, so you can see the point where the second T4 stops paying for itself.
+
 # ddp-crossover
 
 The advice for a second GPU is "use DDP and you get roughly 2x". That advice
