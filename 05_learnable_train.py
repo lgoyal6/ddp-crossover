@@ -160,14 +160,6 @@ def synthetic_dataset(seed: int, count: int = 1024) -> Dataset:
 
 
 def seed_all(seed: int) -> None:
-    # CIFAR-10 uses CUDA convolutions. Without deterministic cuDNN and cuBLAS
-    # settings, two fresh torchrun launches can take different atomic-add
-    # paths and diverge before a checkpoint is ever restored.
-    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.allow_tf32 = False
-    torch.backends.cuda.matmul.allow_tf32 = False
     random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available():
