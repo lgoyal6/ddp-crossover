@@ -1,0 +1,19 @@
+{
+  "0": "adaptive_power_sgd_hook",
+  "1": "05_learnable_train.py",
+  "2": "load_checkpoint",
+  "3": "app.js",
+  "4": "ddp-crossover",
+  "5": "run_final_campaign.py",
+  "6": "02_ddp_sweep.py",
+  "7": "kaggle_combined.py",
+  "8": "test_final_campaign.py",
+  "9": "kaggle_step5.py",
+  "10": "06_compare.py",
+  "11": "adaptive.js",
+  "12": "01_nccl_bench.py",
+  "13": "03_report.py",
+  "14": "test_report_keeps_accumulation_and_fixed_rank_arms_separate",
+  "15": "run_all.sh",
+  "16": "nav.js"
+}
