@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Adaptive DDP trace explorer</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.explorer{max-width:980px;margin:4rem auto;padding:0 1.5rem}.panel{border:1px solid #ccd3dc;border-radius:12px;padding:1.25rem;margin:1rem 0;background:#fff}.chart{width:100%;height:320px}.muted{color:#687383}.tag{display:inline-block;border-radius:99px;background:#eef2f6;padding:.3rem .7rem;margin:.2rem}.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem}.metric{padding:.8rem;background:#f5f7fa;border-radius:8px}.metric b{display:block;font-size:1.35rem}.error{color:#a31d1d}button,input{font:inherit}
+</style>
+</head>
+<body>
+<nav class="topbar"><a class="brand" href="index.html">ddp-crossover</a><div class="navlinks"><a href="index.html">Roofline study</a></div></nav>
+<main class="explorer">
+<div class="eyebrow">Local trace explorer</div>
+<h1>Adaptive communication, at the same target.</h1>
+<p class="muted">Choose recorded JSONL training traces or campaign/restart JSON reports. Files are read in this browser only. Synthetic smoke runs are labeled and do not establish a convergence or speedup claim. This page does not connect to live training.</p>
+<section class="panel"><label for="traces"><b>Recorded training and recovery files</b></label><br><input id="traces" type="file" accept=".jsonl,.json,.txt" multiple><p id="status" class="muted">No recorded files loaded.</p></section>
+<section class="panel"><div id="metrics" class="metrics"></div><canvas id="quality" class="chart" aria-label="Validation accuracy by optimizer step"></canvas></section>
+<section class="panel"><h2>Rank and checkpoint state</h2><div id="details" class="muted">Load training traces with a restart-equivalence or NCCL fault report to see rank decisions and recorded checkpoint restoration.</div></section>
+<p class="muted">The explorer reports the measurements recorded by each run. GPU-hour comparisons require matching hardware, topology, seeds, quality target, and full-run accounting.</p>
+</main>
+<script src="adaptive.js"></script>
+</body>
+</html>
