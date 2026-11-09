@@ -191,3 +191,122 @@ costs more than it saves at every scale that fits on the card.
   the crossover further toward "never pays".
 - **An MLP, not a transformer.** Chosen so parameter count is a clean dial; a
   transformer would vary attention cost and sequence length at the same time.
+
+## Adaptive PowerSGD and time-to-quality
+
+The adaptive study adds a CIFAR-10 training path alongside the existing random-
+label communication sweep. CIFAR-10 is downloaded from the canonical Python
+archive and checked against its published MD5 before use. The official training
+batches are used for training with deterministic per-sample crop/flip seeds; the
+official test batch is validation. `--dataset synthetic` is a fast implementation
+smoke only and must not be presented as a convergence result.
+
+The four arms are dense DDP, PyTorch's FP16 hook, PyTorch PowerSGD at fixed rank,
+and the adaptive per-bucket PowerSGD hook. The global batch size is fixed across
+world sizes and split evenly across ranks and accumulation micro-batches.
+`--accumulate-steps` changes synchronization frequency while keeping the
+effective global batch fixed. Adaptive choices use error-feedback
+residuals at a bounded cadence, aggregate residual statistics across ranks, and
+change a bucket's rank only at the fixed end-of-step boundary. Rank changes keep
+the feedback buffer and discard the rank-shaped warm-start factors.
+
+```sh
+torchrun --nproc_per_node=2 05_learnable_train.py --arm dense --dataset cifar10 \
+  --seed 17 --steps 1000 --batch-size 128 --eval-every 100 \
+  --target-accuracy 0.70 --output runs/dense-seed17.jsonl
+```
+
+First establish that dense DDP reaches the target and freeze the maximum update
+cap. Then run every arm at the same global batch, precision, seed, validation
+cadence, topology, and cap. Use at least three seeds when the device budget
+allows. A run that does not reach the target remains in the report as censored.
+Before comparing compression, run the matched dense accumulation reference with
+the same effective batch, then fixed PowerSGD ranks 1, 2, 4, and 8. Each file is
+one run; filenames should identify arm, rank, accumulation, and seed. These
+commands are an example, and require the two-GPU host from the protocol below:
+
+```sh
+torchrun --nproc_per_node=2 05_learnable_train.py --arm dense --dataset cifar10 \
+  --seed 17 --steps 1000 --batch-size 128 --accumulate-steps 4 \
+  --eval-every 100 --target-accuracy 0.70 --output runs/dense-accum4-seed17.jsonl
+
+for rank in 1 2 4 8; do
+  torchrun --nproc_per_node=2 05_learnable_train.py --arm powersgd --rank "$rank" \
+    --dataset cifar10 --seed 17 --steps 1000 --batch-size 128 \
+    --eval-every 100 --target-accuracy 0.70 \
+    --output "runs/powersgd-rank${rank}-seed17.jsonl"
+done
+```
+
+The comparison tool retains censored runs and separates fixed ranks and
+accumulation settings:
+
+```sh
+python 06_compare.py runs/*jsonl --out runs/time-to-quality.json
+```
+
+Checkpoints bind the model, optimizer, scheduler, scaler, sampler position,
+per-rank RNG, world size, and per-rank compressor state. Each rank has its own
+PowerSGD error-feedback buffers, so rank zero's compressor state cannot stand in
+for the others. Artifact bytes are written first and an integrity-checked
+complete manifest is published last. Restore requires the same world size.
+`--resume` keeps `--steps` as the original total schedule horizon; use
+`--stop-after` to end a checkpointed segment before that horizon.
+
+On resume, DDP performs one no-update dense backward on the next real batch to
+rebuild its reducer bucket layout before restoring per-bucket compression state.
+The batch is reused for the next optimizer step, model buffers and RNG are
+restored, and the added time is reported as `resume_bucket_rebuild_s` within
+`elapsed_s`. The current adaptive hook also sequences bucket collectives in
+bucket order to keep Gloo/NCCL collective order consistent. This CPU path checks
+correctness; serialized bucket communication and reducer warmup must be measured
+on two GPUs before making a performance claim.
+
+The local interactive trace explorer is available at [`docs/adaptive.html`](docs/adaptive.html).
+Load JSONL traces produced by the training command to compare validation quality,
+target completion, rank changes, and censored runs. It reads files in the browser
+without uploading them.
+
+### Frozen calibration and final campaign
+
+The checked-in runner uses a fixed CIFAR-10 target of 70% with three dense DDP
+calibration seeds, a 1,000-update cap, global batch 128, and fp16 autocast. The
+final matrix reuses those settings and compares dense accumulation 1 and 4,
+FP16 communication, adaptive PowerSGD, and fixed PowerSGD ranks 1, 2, 4, and 8
+at accumulation 4. Every arm therefore has the same effective global batch and
+optimizer-update schedule. Calibration outcomes are recorded so the matrix can
+continue when a seed misses the target.
+
+The runner is sequential and local. It requires exactly two visible CUDA
+devices and creates no cloud resources. Inspect its command plan first:
+
+```sh
+python run_final_campaign.py campaign --dry-run
+```
+
+The single `campaign` phase first runs a two-GPU NCCL fault control with one
+rank-local gradient perturbation, then an adaptive checkpoint, resume, and
+uninterrupted-reference equivalence check. The fault control verifies finite
+weights, matching adaptive decisions on both ranks, and identical replica
+updates. The restart result is retained with the campaign and does not block
+calibration or the final/profile matrix. Spend remains controlled by the
+external credit watchdog. Use a new private output directory. The runner
+retains each raw JSONL trace, command log, checkpoint, restart-equivalence
+report, final report, and profiler trace there.
+
+Each training trace records logical collective payload bytes per rank. Dense
+and FP16 values come from the bucket payload, while PowerSGD values come from
+PyTorch's counted compressed and uncompressed tensor elements. Adaptive control
+collective payload is reported separately. `estimated_ring_bus_bytes_per_rank`
+applies the ring factor `2*(world_size-1)/world_size`; it is an estimate, not a
+claim about NCCL's selected algorithm. The runner also pairs a 32-step profiled
+and unprofiled run for each arm and seed 17. Profiler runs are kept separate
+from time-to-quality runs, and the trace is emitted once per rank. The paired
+elapsed-time difference reports profiling overhead for that short window.
+
+CPU/Gloo verification was run with Torch 2.14.0. This host has no CUDA devices;
+it cannot establish the target on a two-GPU topology, report GPU-hours, validate
+NCCL overlap, or make a speedup claim. For final evidence, retain the PyTorch,
+CUDA, NCCL, device model, topology, profiler trace, communicated bytes, projection
+time, controller overhead, feedback memory, setup and resume-warmup time with
+each run.
